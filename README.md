@@ -1,6 +1,6 @@
 # souman
 
-Small utility to download and build packages from source using the [Arch Build System (ABS)](https://wiki.archlinux.org/index.php/Arch_Build_System). The build process is handled by [makepkg](https://wiki.archlinux.org/index.php/makepkg) and the final package will be installed with [pacman](https://wiki.archlinux.org/index.php/pacman).
+Small utility to download and build packages from source using the [Arch Build System (ABS)](https://wiki.archlinux.org/index.php/Arch_Build_System). The build and install process is handled by [makepkg](https://wiki.archlinux.org/index.php/makepkg).
 
 
 ## Install
