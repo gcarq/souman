@@ -80,12 +80,20 @@ build_packages() {
 	done
 }
 
+##
+# Cleanup
+##
+cleanup() {
+	if [[ -n "$tmp_workdir" ]] && [[ -d "$tmp_workdir" ]]; then
+		rm -r "$tmp_workdir"
+	fi
+}
 
 ##
 # Signal Traps
 ##
-trap 'error "TERM signal caught. Exiting..."; exit 1' TERM HUP QUIT
-trap 'error "Aborted by user! Exiting..."; exit 1' INT
+trap 'error "TERM signal caught. Exiting..."; cleanup; exit 1' TERM HUP QUIT
+trap 'error "Aborted by user! Exiting..."; cleanup; exit 1' INT
 trap 'error "An unknown error has occured. Exiting..."; exit 1' ERR
 
 ##
