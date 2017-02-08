@@ -61,37 +61,24 @@ version() {
 }
 
 ##
-# Invoke makepkg for all $PACKAGES
+# Invoke makepkg for all $_packages
 ##
 build_packages() {
-    for package in "${PACKAGES[@]}"; do
-        cd "$WORKDIR"
-        tmp_workdir=`mktemp -d`
-        # Check if given package exists in local tree
-        if [ -d "./$package" ]; then
-            cp -R "./$package/." "$tmp_workdir/"
-            cd "$tmp_workdir"
-            makepkg --syncdeps --install --clean
-        else
-            # This is the fallback where the first repo/package pick gets built
-            local pkg_found=0
-            for repo in */ ; do
-                pkg_found=0
-                if [ -d "./${repo}${package}" ]; then
-                    cp -R "./${repo}${package}/." "$tmp_workdir/"
-                    cd "$tmp_workdir"
-					msg "Building ${repo}${package}..."
-                    makepkg --syncdeps --install --clean
-                    pkg_found=1
-                    break;
-                fi
-            done
-            if [ $pkg_found -eq 0 ]; then
-                error "target not found: $package"
-            fi
-        fi
-        rm -r $tmp_workdir
-    done
+	for package in "${_packages[@]}"; do
+		tmp_workdir="$(mktemp -d -t "$(basename "$0").XXXXXX")"
+		# get a folder path from find(1)
+		abs_dir="$(find "$workdir" -maxdepth 2 -type d -name "$package")"
+		# find(1) will not err if it returns nothing, thus the following -d test
+		if [[ -d "${abs_dir}" ]]; then
+			cp -R "${abs_dir}/." "$tmp_workdir/"
+			cd "$tmp_workdir"
+			makepkg --syncdeps --install --clean
+		else
+			error "target not found: $package"
+		fi
+		cd
+		rm -r "$tmp_workdir"
+	done
 }
 
 
