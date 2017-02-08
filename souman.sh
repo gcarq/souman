@@ -123,7 +123,7 @@ while true; do
 		-V|--version)  version; exit $_E_OK;;
 		-y|--refresh)  _refresh=1;;
 		--)            OPT_IND=0; shift; break;;
-		*)             usage; exit $_E_INVALID_OPTION;;
+		*)             usage >&2; exit $_E_INVALID_OPTION;;
 	esac
 	shift
 done
