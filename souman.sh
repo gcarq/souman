@@ -117,7 +117,7 @@ opt_long="help,version,refresh"
 opt_temp="$(getopt -o "$opt_short" -l "$opt_long" -n "$(basename "$0")" -- "$@" || echo 'GETOPT GO BANG!')"
 if echo "$opt_temp" | grep -q 'GETOPT GO BANG!'; then
 	# This is a small hack to stop the script bailing with 'set -e'
-	echo; usage; exit $_E_INVALID_OPTION;
+	echo; usage >&2; exit $_E_INVALID_OPTION;
 fi
 eval set -- "$opt_temp"
 unset opt_short opt_long opt_temp
