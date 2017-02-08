@@ -36,28 +36,32 @@ error() {
 # Helper functions
 ##
 usage() {
-	echo "Arch Source Manager $_version -- source synchronization and building utility"
-	echo ""
-	echo "Usage:"
-	echo "$0 [options] [package [package ...]]"
-	echo
-	echo "Options:"
-	echo "  -h, --help     Display this help message then exit."
-	echo "  -V, --version  Display version information then exit."
-	echo "  -y, --refresh  Sync repositories using ABS."
-	echo
-	echo "If no argument is given, souman will search in ${SOUMAN_WORKDIR} for synced repositories."
-	echo "You can set this directory with the SOUMAN_WORKDIR env variable."
-	echo "The sync is completely managed by abs, so you may want to edit /etc/abs.conf."
+	cat << EOH
+Arch Source Manager $_version -- source synchronization and building utility
+
+
+$0 [options] [package [package ...]]
+
+Options:
+  -h, --help     Display this help message then exit.
+  -V, --version  Display version information then exit.
+  -y, --refresh  Sync repositories using ABS.
+
+If no argument is given, souman will search in ${SOUMAN_WORKDIR} for synced repositories.
+You can set this directory with the SOUMAN_WORKDIR env variable.
+The sync is completely managed by abs, so you may want to edit /etc/abs.conf.
+EOH
 }
 
 version() {
-	echo "souman $_version"
-	echo
-	echo "Copyright (C) 2017 gcarq <michael.egger@tsn.at>"
-	echo
-	echo "This is free software; see the source for copying conditions."
-	echo "There is NO WARRANTY, to the extent permitted by law."
+	cat << EOV
+souman $_version
+
+Copyright (C) 2017 gcarq <michael.egger@tsn.at>
+
+This is free software; see the source for copying conditions.
+There is NO WARRANTY, to the extent permitted by law.
+EOV
 }
 
 ##
