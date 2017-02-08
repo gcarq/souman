@@ -3,9 +3,8 @@
 ##
 # Constants
 ##
-ARCH=i686
-VERSION="%%VERSION%%"
-WORKDIR="$HOME/.cache/souman"
+_version="%%VERSION%%"
+workdir="$HOME/.cache/souman"
 
 ##
 # Script Exit Reasons
@@ -37,22 +36,22 @@ error() {
 # Helper functions
 ##
 usage() {
-	echo "Arch Source Manager $VERSION -- source synchronization and building utility"
+	echo "Arch Source Manager $_version -- source synchronization and building utility"
 	echo ""
 	echo "Usage:"
-	echo "$0 [options] [package(s)]"
+	echo "$0 [options] [package [package ...]]"
 	echo
 	echo "Options:"
 	echo "  -h, --help     Display this help message then exit."
 	echo "  -V, --version  Display version information then exit."
 	echo "  -y, --refresh  Sync repositories using ABS."
 	echo
-	echo "If no argument is given, souman will search in ${WORKDIR} for synced repositories."
+	echo "If no argument is given, souman will search in ${workdir} for synced repositories."
 	echo "The sync is completely managed by abs, so you may want to edit /etc/abs.conf."
 }
 
 version() {
-	echo "souman $VERSION"
+	echo "souman $_version"
 	echo
 	echo "Copyright (C) 2017 gcarq <michael.egger@tsn.at>"
 	echo
@@ -100,51 +99,51 @@ fi
 ##
 # Parse Options
 ##
-OPT_SHORT="hVy"
-OPT_LONG="help,version,refresh"
-OPT_TEMP="$(getopt -o "$OPT_SHORT" -l "$OPT_LONG" -n "$(basename "$0")" -- "$@" || echo 'GETOPT GO BANG!')"
-if echo "$OPT_TEMP" | grep -q 'GETOPT GO BANG!'; then
+opt_short="hVy"
+opt_long="help,version,refresh"
+opt_temp="$(getopt -o "$opt_short" -l "$opt_long" -n "$(basename "$0")" -- "$@" || echo 'GETOPT GO BANG!')"
+if echo "$opt_temp" | grep -q 'GETOPT GO BANG!'; then
 	# This is a small hack to stop the script bailing with 'set -e'
 	echo; usage; exit $_E_INVALID_OPTION;
 fi
-eval set -- "$OPT_TEMP"
-unset OPT_SHORT OPT_LONG OPT_TEMP
+eval set -- "$opt_temp"
+unset opt_short opt_long opt_temp
 
 while true; do
 	case "$1" in
 		-h|--help)     usage; exit $_E_OK;;
 		-V|--version)  version; exit $_E_OK;;
-		-y|--refresh)  REFRESH=1;;
+		-y|--refresh)  _refresh=1;;
 		--)            OPT_IND=0; shift; break;;
 		*)             usage; exit $_E_INVALID_OPTION;;
 	esac
 	shift
 done
 
-if [ "$#" -gt "0" ]; then
+if [[ "$#" -gt "0" ]]; then
 	CLPARAM=1
-	PACKAGES=("$@")
+	_packages=("$@")
 fi
 
-if [ -z "$PACKAGES" ] && [ -z "$REFRESH" ]; then
-    usage; exit $_E_INVALID_OPTION;
+if [[ -z "$_packages" ]] && [[ -z "$_refresh" ]]; then
+    usage >&2; exit $_E_INVALID_OPTION;
 fi
 
-if [ ! -d "$WORKDIR" ]; then
-	mkdir -p "$WORKDIR"
+if [[ ! -d "$workdir" ]]; then
+	mkdir -p "$workdir"
 fi
 
-if [ ! -w "$WORKDIR" ]; then
-	error "no write permissions in $WORKDIR"
+if [[ ! -w "$workdir" ]]; then
+	error "no write permissions in $workdir"
 	exit $_E_CONFIG_ERROR
 fi
 
-if [ "$REFRESH" ]; then
+if [[ "$_refresh" ]]; then
 	# invoke abs to sync repos
-	ABSROOT="$WORKDIR" abs -t
+	ABSROOT="$workdir" abs -t
 fi
 
-if [ "$PACKAGES" ]; then
+if [[ "$_packages" ]]; then
     build_packages;
 fi
 
