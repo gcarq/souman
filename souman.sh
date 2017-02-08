@@ -91,7 +91,7 @@ trap 'error "An unknown error has occured. Exiting..."; exit 1' ERR
 ##
 # Dont allow root user to run this script
 ##
-if [ "$EUID" -eq 0 ];then
+if [[ "$EUID" -eq 0 ]];then
 	error "Running souman as root is not allowed as it can cause permanent, catastrophic damage to your system."
 	exit $_E_INVALID_OPTION;
 fi
