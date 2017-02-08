@@ -4,7 +4,7 @@
 # Constants
 ##
 _version="%%VERSION%%"
-workdir="$HOME/.cache/souman"
+: "${SOUMAN_WORKDIR="$HOME/.cache/souman"}"
 
 ##
 # Script Exit Reasons
@@ -46,7 +46,8 @@ usage() {
 	echo "  -V, --version  Display version information then exit."
 	echo "  -y, --refresh  Sync repositories using ABS."
 	echo
-	echo "If no argument is given, souman will search in ${workdir} for synced repositories."
+	echo "If no argument is given, souman will search in ${SOUMAN_WORKDIR} for synced repositories."
+	echo "You can set this directory with the SOUMAN_WORKDIR env variable."
 	echo "The sync is completely managed by abs, so you may want to edit /etc/abs.conf."
 }
 
@@ -66,7 +67,7 @@ build_packages() {
 	for package in "${_packages[@]}"; do
 		tmp_workdir="$(mktemp -d -t "$(basename "$0").XXXXXX")"
 		# get a folder path from find(1)
-		abs_dir="$(find "$workdir" -maxdepth 2 -type d -name "$package")"
+		abs_dir="$(find "$SOUMAN_WORKDIR" -maxdepth 2 -type d -name "$package")"
 		# find(1) will not err if it returns nothing, thus the following -d test
 		if [[ -d "${abs_dir}" ]]; then
 			cp -R "${abs_dir}/." "$tmp_workdir/"
@@ -137,18 +138,18 @@ if [[ -z "$_packages" ]] && [[ -z "$_refresh" ]]; then
     usage >&2; exit $_E_INVALID_OPTION;
 fi
 
-if [[ ! -d "$workdir" ]]; then
-	mkdir -p "$workdir"
+if [[ ! -d "$SOUMAN_WORKDIR" ]]; then
+	mkdir -p "$SOUMAN_WORKDIR"
 fi
 
-if [[ ! -w "$workdir" ]]; then
-	error "no write permissions in $workdir"
+if [[ ! -w "$SOUMAN_WORKDIR" ]]; then
+	error "no write permissions in $SOUMAN_WORKDIR"
 	exit $_E_CONFIG_ERROR
 fi
 
 if [[ "$_refresh" ]]; then
 	# invoke abs to sync repos
-	ABSROOT="$workdir" abs -t
+	ABSROOT="$SOUMAN_WORKDIR" abs -t
 fi
 
 if [[ "$_packages" ]]; then
