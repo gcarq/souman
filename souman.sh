@@ -3,9 +3,8 @@
 ##
 # Constants
 ##
-ARCH=i686
-VERSION="%%VERSION%%"
-WORKDIR="$HOME/.cache/souman"
+_version="%%VERSION%%"
+: "${SOUMAN_WORKDIR="$HOME/.cache/souman"}"
 
 ##
 # Script Exit Reasons
@@ -37,75 +36,75 @@ error() {
 # Helper functions
 ##
 usage() {
-	echo "Arch Source Manager $VERSION -- source synchronization and building utility"
-	echo ""
-	echo "Usage:"
-	echo "$0 [options] [package(s)]"
-	echo
-	echo "Options:"
-	echo "  -h, --help     Display this help message then exit."
-	echo "  -V, --version  Display version information then exit."
-	echo "  -y, --refresh  Sync repositories using ABS."
-	echo
-	echo "If no argument is given, souman will search in ${WORKDIR} for synced repositories."
-	echo "The sync is completely managed by abs, so you may want to edit /etc/abs.conf."
+	cat << EOH
+Arch Source Manager $_version -- source synchronization and building utility
+
+
+$0 [options] [package [package ...]]
+
+Options:
+  -h, --help     Display this help message then exit.
+  -V, --version  Display version information then exit.
+  -y, --refresh  Sync repositories using ABS.
+
+If no argument is given, souman will search in ${SOUMAN_WORKDIR} for synced repositories.
+You can set this directory with the SOUMAN_WORKDIR env variable.
+The sync is completely managed by abs, so you may want to edit /etc/abs.conf.
+EOH
 }
 
 version() {
-	echo "souman $VERSION"
-	echo
-	echo "Copyright (C) 2017 gcarq <michael.egger@tsn.at>"
-	echo
-	echo "This is free software; see the source for copying conditions."
-	echo "There is NO WARRANTY, to the extent permitted by law."
+	cat << EOV
+souman $_version
+
+Copyright (C) 2017 gcarq <michael.egger@tsn.at>
+
+This is free software; see the source for copying conditions.
+There is NO WARRANTY, to the extent permitted by law.
+EOV
 }
 
 ##
-# Invoke makepkg for all $PACKAGES
+# Invoke makepkg for all $_packages
 ##
 build_packages() {
-    for package in "${PACKAGES[@]}"; do
-        cd "$WORKDIR"
-        tmp_workdir=`mktemp -d`
-        # Check if given package exists in local tree
-        if [ -d "./$package" ]; then
-            cp -R "./$package/." "$tmp_workdir/"
-            cd "$tmp_workdir"
-            makepkg --syncdeps --install --clean
-        else
-            # This is the fallback where the first repo/package pick gets built
-            local pkg_found=0
-            for repo in */ ; do
-                pkg_found=0
-                if [ -d "./${repo}${package}" ]; then
-                    cp -R "./${repo}${package}/." "$tmp_workdir/"
-                    cd "$tmp_workdir"
-					msg "Building ${repo}${package}..."
-                    makepkg --syncdeps --install --clean
-                    pkg_found=1
-                    break;
-                fi
-            done
-            if [ $pkg_found -eq 0 ]; then
-                error "target not found: $package"
-            fi
-        fi
-        rm -r $tmp_workdir
-    done
+	for package in "${_packages[@]}"; do
+		tmp_workdir="$(mktemp -d -t "$(basename "$0").XXXXXX")"
+		# get a folder path from find(1)
+		abs_dir="$(find "$SOUMAN_WORKDIR" -maxdepth 2 -type d -name "$package")"
+		# find(1) will not err if it returns nothing, thus the following -d test
+		if [[ -d "${abs_dir}" ]]; then
+			cp -R "${abs_dir}/." "$tmp_workdir/"
+			cd "$tmp_workdir"
+			makepkg --syncdeps --install --clean
+		else
+			error "target not found: $package"
+		fi
+		cd
+		rm -r "$tmp_workdir"
+	done
 }
 
+##
+# Cleanup
+##
+cleanup() {
+	if [[ -n "$tmp_workdir" ]] && [[ -d "$tmp_workdir" ]]; then
+		rm -r "$tmp_workdir"
+	fi
+}
 
 ##
 # Signal Traps
 ##
-trap 'error "TERM signal caught. Exiting..."; exit 1' TERM HUP QUIT
-trap 'error "Aborted by user! Exiting..."; exit 1' INT
+trap 'error "TERM signal caught. Exiting..."; cleanup; exit 1' TERM HUP QUIT
+trap 'error "Aborted by user! Exiting..."; cleanup; exit 1' INT
 trap 'error "An unknown error has occured. Exiting..."; exit 1' ERR
 
 ##
 # Dont allow root user to run this script
 ##
-if [ "$EUID" -eq 0 ];then
+if [[ "$EUID" -eq 0 ]];then
 	error "Running souman as root is not allowed as it can cause permanent, catastrophic damage to your system."
 	exit $_E_INVALID_OPTION;
 fi
@@ -113,51 +112,51 @@ fi
 ##
 # Parse Options
 ##
-OPT_SHORT="hVy"
-OPT_LONG="help,version,refresh"
-OPT_TEMP="$(getopt -o "$OPT_SHORT" -l "$OPT_LONG" -n "$(basename "$0")" -- "$@" || echo 'GETOPT GO BANG!')"
-if echo "$OPT_TEMP" | grep -q 'GETOPT GO BANG!'; then
+opt_short="hVy"
+opt_long="help,version,refresh"
+opt_temp="$(getopt -o "$opt_short" -l "$opt_long" -n "$(basename "$0")" -- "$@" || echo 'GETOPT GO BANG!')"
+if echo "$opt_temp" | grep -q 'GETOPT GO BANG!'; then
 	# This is a small hack to stop the script bailing with 'set -e'
-	echo; usage; exit $_E_INVALID_OPTION;
+	echo; usage >&2; exit $_E_INVALID_OPTION;
 fi
-eval set -- "$OPT_TEMP"
-unset OPT_SHORT OPT_LONG OPT_TEMP
+eval set -- "$opt_temp"
+unset opt_short opt_long opt_temp
 
 while true; do
 	case "$1" in
 		-h|--help)     usage; exit $_E_OK;;
 		-V|--version)  version; exit $_E_OK;;
-		-y|--refresh)  REFRESH=1;;
+		-y|--refresh)  _refresh=1;;
 		--)            OPT_IND=0; shift; break;;
-		*)             usage; exit $_E_INVALID_OPTION;;
+		*)             usage >&2; exit $_E_INVALID_OPTION;;
 	esac
 	shift
 done
 
-if [ "$#" -gt "0" ]; then
+if [[ "$#" -gt "0" ]]; then
 	CLPARAM=1
-	PACKAGES=("$@")
+	_packages=("$@")
 fi
 
-if [ -z "$PACKAGES" ] && [ -z "$REFRESH" ]; then
-    usage; exit $_E_INVALID_OPTION;
+if [[ -z "$_packages" ]] && [[ -z "$_refresh" ]]; then
+    usage >&2; exit $_E_INVALID_OPTION;
 fi
 
-if [ ! -d "$WORKDIR" ]; then
-	mkdir -p "$WORKDIR"
+if [[ ! -d "$SOUMAN_WORKDIR" ]]; then
+	mkdir -p "$SOUMAN_WORKDIR"
 fi
 
-if [ ! -w "$WORKDIR" ]; then
-	error "no write permissions in $WORKDIR"
+if [[ ! -w "$SOUMAN_WORKDIR" ]]; then
+	error "no write permissions in $SOUMAN_WORKDIR"
 	exit $_E_CONFIG_ERROR
 fi
 
-if [ "$REFRESH" ]; then
+if [[ "$_refresh" ]]; then
 	# invoke abs to sync repos
-	ABSROOT="$WORKDIR" abs -t
+	ABSROOT="$SOUMAN_WORKDIR" abs -t
 fi
 
-if [ "$PACKAGES" ]; then
+if [[ "$_packages" ]]; then
     build_packages;
 fi
 
