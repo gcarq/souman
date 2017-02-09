@@ -70,8 +70,12 @@ EOV
 build_packages() {
 	for package in "${_packages[@]}"; do
 		tmp_workdir="$(mktemp -d -t "$(basename "$0").XXXXXX")"
-		# get a folder path from find(1)
-		abs_dir="$(find "$SOUMAN_WORKDIR" -maxdepth 2 -type d -name "$package")"
+		# get a folder path in format 'repo/package' from find(1)
+		abs_dir="$(find "$SOUMAN_WORKDIR" -maxdepth 2 -type d -path "$SOUMAN_WORKDIR/$package")"
+		if [[ ! -d "${abs_dir}" ]]; then
+			# if no full package name is given pick the first match from a repo
+			abs_dir="$(find "$SOUMAN_WORKDIR" -maxdepth 2 -type d -name "$package")"
+		fi
 		# find(1) will not err if it returns nothing, thus the following -d test
 		if [[ -d "${abs_dir}" ]]; then
 			cp -R "${abs_dir}/." "$tmp_workdir/"
